@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const AudioInputNote = () => {
     const [data, setData] = useState([]);
@@ -47,12 +48,19 @@ const AudioInputNote = () => {
 
     return (
         <div>
-            <h2>Recorded Notes and Frequency</h2>
-            {data.map((item, index) => (
-                <p key={index}>
-                    Second {item.time}: {item.note} ({item.frequency.toFixed(2)} Hz)
-                </p>
-            ))}
+            <h2>Recorded Frequency</h2>
+            <LineChart
+                width={500}
+                height={300}
+                data={data}
+                margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+            >
+                <XAxis dataKey="time" label={{ value: 'Time (seconds)', position: 'insideBottomRight', offset: 0 }} />
+                <YAxis label={{ value: 'Frequency (Hz)', angle: -90, position: 'insideLeft' }} />
+                <Tooltip />
+                <CartesianGrid stroke="#f5f5f5" />
+                <Line type="monotone" dataKey="frequency" stroke="#ff7300" yAxisId={0} />
+            </LineChart>
         </div>
     );
 };

@@ -50,7 +50,7 @@ const AudioInputNote = () => {
         <div>
             <h2>Recorded Frequency</h2>
             <LineChart
-                width={500}
+                width={980}
                 height={300}
                 data={data}
                 margin={{ top: 5, right: 20, left: 10, bottom: 5 }}

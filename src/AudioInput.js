@@ -52,7 +52,11 @@ const AudioInputNote = () => {
                         analyser.getByteFrequencyData(dataArray);
                         let maxIndex = dataArray.reduce((iMax, x, i, arr) => x > arr[iMax] ? i : iMax, 0);
                         let freq = maxIndex * audioContext.sampleRate / (analyser.fftSize * 2);
-                        setData(prev => [...prev, { time: prev.length + 1, note: frequencyToNote(freq), frequency: freq }]);
+
+                        // Calculate the RMS value for volume
+                        let sum = dataArray.reduce((a, b) => a + b, 0);
+                        let rms = Math.sqrt(sum / bufferLength);
+                        setData(prev => [...prev, { time: prev.length + 1, note: frequencyToNote(freq), frequency: freq, volume: rms }]);
                     }, 100);
                 })
                 .catch(function (err) {
@@ -83,6 +87,19 @@ const AudioInputNote = () => {
                 <Tooltip />
                 <CartesianGrid stroke="#f5f5f5" />
                 <Line type="monotone" dataKey="frequency" stroke="#ff7300" yAxisId={0} />
+            </LineChart>
+            <h2>Recorded Volume</h2>
+            <LineChart
+                width={980}
+                height={300}
+                data={data}
+                margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+            >
+                <XAxis dataKey="time" label={{ value: 'Time (ms)', position: 'insideBottomRight', offset: 0 }} />
+                <YAxis label={{ value: 'Volume', angle: -90, position: 'insideLeft' }} />
+                <Tooltip />
+                <CartesianGrid stroke="#f5f5f5" />
+                <Line type="monotone" dataKey="volume" stroke="#ff7300" yAxisId={0} />
             </LineChart>
         </div>
     );

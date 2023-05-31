@@ -168,7 +168,7 @@ const MicrophoneVisualizer = () => {
         <YAxis label={{ value: 'Volume', angle: -90, position: 'insideLeft' }} />
         <Tooltip />
         <CartesianGrid stroke="#f5f5f5" />
-        <Line type="monotone" dataKey="volume" stroke="#ff7300" yAxisId={0} />
+        <Line type="monotone" dataKey="volume" stroke="#ff7300" yAxisId={0} dot={false} />
       </LineChart>
       <h2>Detected Frequency (Hz)</h2>
       <LineChart
@@ -181,7 +181,7 @@ const MicrophoneVisualizer = () => {
         <YAxis label={{ value: 'Frequency (Hz)', angle: -90, position: 'insideLeft' }} />
         <Tooltip />
         <CartesianGrid stroke="#f5f5f5" />
-        <Line type="monotone" dataKey="frequency" stroke="#00ff00" yAxisId={0} />
+        <Line type="monotone" dataKey="frequency" stroke="#00ff00" yAxisId={0} dot={false} />
       </LineChart>
     </div>
   );

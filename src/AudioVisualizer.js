@@ -6,7 +6,8 @@ const MicrophoneVisualizer = () => {
   const canvasRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyzerRef = useRef(null);
-  const [data, setData] = useState([]);
+  const [volumeData, setVolumeData] = useState([]);
+  const [frequencyData, setFrequencyData] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
 
   useEffect(() => {
@@ -25,7 +26,6 @@ const MicrophoneVisualizer = () => {
         .then((stream) => {
           audioContext = new AudioContext();
           const source = audioContext.createMediaStreamSource(stream);
-
           const gainNode = audioContext.createGain();
           gainNode.gain.value = 10;
 
@@ -37,13 +37,19 @@ const MicrophoneVisualizer = () => {
             audioContext: audioContext,
             source: gainNode,
             bufferSize: bufferSize,
-            featureExtractors: ['rms'],
+            featureExtractors: ['rms', 'amplitudeSpectrum'],
             callback: (features) => {
               const rms = features.rms;
+              const frequency = getFrequencyFromSpectrum(features.amplitudeSpectrum, audioContext.sampleRate);
 
-              setData((prevData) => [
+              setVolumeData((prevData) => [
                 ...prevData,
                 { time: Date.now(), volume: rms },
+              ]);
+
+              setFrequencyData((prevData) => [
+                ...prevData,
+                { time: Date.now(), frequency: frequency },
               ]);
 
               ctx.fillStyle = 'grey';
@@ -92,8 +98,19 @@ const MicrophoneVisualizer = () => {
     setIsRecording(false);
   };
 
+  const getFrequencyFromSpectrum = (spectrum, sampleRate) => {
+    const maxAmplitude = Math.max(...spectrum);
+    const index = spectrum.findIndex((value) => value === maxAmplitude);
+    const frequency = index * (sampleRate / spectrum.length);
+    return frequency.toFixed(2);
+  };
+
   return (
-    <div>
+    <div style={{ padding: '2em' }}>
+      <div style={{ float: 'right' }}>
+        <h2>Mic levels</h2>
+        <canvas ref={canvasRef} />
+      </div>
       <div>
         <button onClick={handleStartRecording} disabled={isRecording}>
           Start Recording
@@ -106,7 +123,7 @@ const MicrophoneVisualizer = () => {
       <LineChart
         width={980}
         height={300}
-        data={data}
+        data={volumeData}
         margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
       >
         <XAxis dataKey="time" label={{ value: 'Time (ms)', position: 'insideBottomRight', offset: 0 }} />
@@ -115,7 +132,19 @@ const MicrophoneVisualizer = () => {
         <CartesianGrid stroke="#f5f5f5" />
         <Line type="monotone" dataKey="volume" stroke="#ff7300" yAxisId={0} />
       </LineChart>
-      <canvas ref={canvasRef} />
+      <h2>Detected Frequency (Hz)</h2>
+      <LineChart
+        width={980}
+        height={300}
+        data={frequencyData}
+        margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+      >
+        <XAxis dataKey="time" label={{ value: 'Time (ms)', position: 'insideBottomRight', offset: 0 }} />
+        <YAxis label={{ value: 'Frequency (Hz)', angle: -90, position: 'insideLeft' }} />
+        <Tooltip />
+        <CartesianGrid stroke="#f5f5f5" />
+        <Line type="monotone" dataKey="frequency" stroke="#00ff00" yAxisId={0} />
+      </LineChart>
     </div>
   );
 };

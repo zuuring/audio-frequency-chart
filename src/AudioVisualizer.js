@@ -8,7 +8,10 @@ const MicrophoneVisualizer = () => {
   const analyzerRef = useRef(null);
   const [volumeData, setVolumeData] = useState([]);
   const [frequencyData, setFrequencyData] = useState([]);
+  const [audioSource, setAudioSource] = useState('microphone');
   const [isRecording, setIsRecording] = useState(false);
+  const fileInputRef = useRef(null);
+  const audioElementRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -21,53 +24,64 @@ const MicrophoneVisualizer = () => {
     let analyzer = null;
 
     const startRecording = () => {
-      navigator.mediaDevices
-        .getUserMedia({ audio: true })
-        .then((stream) => {
-          audioContext = new AudioContext();
-          const source = audioContext.createMediaStreamSource(stream);
-          const gainNode = audioContext.createGain();
-          gainNode.gain.value = 10;
+      audioContext = new AudioContext({ sampleRate: 44100 });
+      let source;
 
-          source.connect(gainNode);
-
-          const bufferSize = 2048;
-
-          analyzer = Meyda.createMeydaAnalyzer({
-            audioContext: audioContext,
-            source: gainNode,
-            bufferSize: bufferSize,
-            featureExtractors: ['rms', 'amplitudeSpectrum'],
-            callback: (features) => {
-              const rms = features.rms;
-              const frequency = getFrequencyFromSpectrum(features.amplitudeSpectrum, audioContext.sampleRate);
-
-              setVolumeData((prevData) => [
-                ...prevData,
-                { time: Date.now(), volume: rms },
-              ]);
-
-              setFrequencyData((prevData) => [
-                ...prevData,
-                { time: Date.now(), frequency: frequency },
-              ]);
-
-              ctx.fillStyle = 'white';
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-              const barHeight = rms * canvas.height;
-              ctx.fillStyle = 'blue';
-              ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
-            },
+      if (audioSource === 'microphone') {
+        navigator.mediaDevices
+          .getUserMedia({ audio: true })
+          .then((stream) => {
+            source = audioContext.createMediaStreamSource(stream);
+            setupAnalyzer(source);
+          })
+          .catch((error) => {
+            console.error('Error accessing microphone:', error);
           });
+      } else if (audioSource === 'file') {
+        source = audioContext.createMediaElementSource(audioElementRef.current);
+        setupAnalyzer(source);
+      }
+    };
 
-          audioContextRef.current = audioContext;
-          analyzerRef.current = analyzer;
-          analyzer.start();
-        })
-        .catch((error) => {
-          console.error('Error accessing microphone:', error);
-        });
+    const setupAnalyzer = (source) => {
+      const gainNode = audioContext.createGain();
+      gainNode.gain.value = 10;
+
+      source.connect(gainNode);
+
+      const bufferSize = 2048;
+
+      analyzer = Meyda.createMeydaAnalyzer({
+        audioContext: audioContext,
+        source: gainNode,
+        bufferSize: bufferSize,
+        featureExtractors: ['rms', 'amplitudeSpectrum'],
+        callback: (features) => {
+          const rms = features.rms;
+          const frequency = getFrequencyFromSpectrum(features.amplitudeSpectrum, audioContext.sampleRate);
+
+          setVolumeData((prevData) => [
+            ...prevData,
+            { time: Date.now(), volume: rms },
+          ]);
+
+          setFrequencyData((prevData) => [
+            ...prevData,
+            { time: Date.now(), frequency: frequency },
+          ]);
+
+          ctx.fillStyle = 'grey';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          const barHeight = rms * canvas.height;
+          ctx.fillStyle = 'blue';
+          ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
+        },
+      });
+
+      audioContextRef.current = audioContext;
+      analyzerRef.current = analyzer;
+      analyzer.start();
     };
 
     const stopRecording = () => {
@@ -88,7 +102,7 @@ const MicrophoneVisualizer = () => {
     return () => {
       stopRecording();
     };
-  }, [isRecording]);
+  }, [isRecording, audioSource]);
 
   const handleStartRecording = () => {
     setIsRecording(true);
@@ -98,12 +112,29 @@ const MicrophoneVisualizer = () => {
     setIsRecording(false);
   };
 
-  const getFrequencyFromSpectrum = (spectrum, sampleRate) => {
-    const maxAmplitude = Math.max(...spectrum);
-    const index = spectrum.findIndex((value) => value === maxAmplitude);
-    const frequency = index * (sampleRate / spectrum.length);
-    return frequency.toFixed(2);
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        audioElementRef.current.src = reader.result;
+        audioElementRef.current.play();
+      };
+      reader.readAsDataURL(file);
+    }
   };
+
+  const handleSourceChange = (e) => {
+    setAudioSource(e.target.value);
+  };
+
+  const getFrequencyFromSpectrum = (spectrum, sampleRate) => {
+    const positiveSpectrum = spectrum.slice(0, spectrum.length / 2);
+    const maxAmplitude = Math.max(...positiveSpectrum);
+    const index = positiveSpectrum.findIndex((value) => value === maxAmplitude);
+    const frequency = index * (sampleRate / (2 * spectrum.length));
+    return frequency.toFixed(2);
+};
 
   return (
     <div style={{ padding: '2em' }}>
@@ -112,6 +143,10 @@ const MicrophoneVisualizer = () => {
         <canvas ref={canvasRef} />
       </div>
       <div>
+        <select value={audioSource} onChange={handleSourceChange}>
+          <option value="microphone">Microphone</option>
+          <option value="file">Audio Source</option>
+        </select>
         <button onClick={handleStartRecording} disabled={isRecording}>
           Start Recording
         </button>
@@ -119,6 +154,9 @@ const MicrophoneVisualizer = () => {
           Stop Recording
         </button>
       </div>
+      <h2>Audio Source</h2>
+      <input type="file" accept=".mp3" onChange={handleFileChange} ref={fileInputRef} />
+      <audio controls ref={audioElementRef} style={{ marginTop: '1rem' }} />
       <h2>Recorded Volume</h2>
       <LineChart
         width={980}
@@ -130,7 +168,7 @@ const MicrophoneVisualizer = () => {
         <YAxis label={{ value: 'Volume', angle: -90, position: 'insideLeft' }} />
         <Tooltip />
         <CartesianGrid stroke="#f5f5f5" />
-        <Line type="monotone" dataKey="volume" stroke="#001DFF" yAxisId={0} />
+        <Line type="monotone" dataKey="volume" stroke="#ff7300" yAxisId={0} />
       </LineChart>
       <h2>Detected Frequency (Hz)</h2>
       <LineChart

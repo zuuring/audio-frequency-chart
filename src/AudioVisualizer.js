@@ -88,7 +88,7 @@ const MicrophoneVisualizer = () => {
       if (analyzerRef.current) {
         analyzerRef.current.stop();
       }
-      if (audioContextRef.current) {
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
         audioContextRef.current.close();
       }
     };

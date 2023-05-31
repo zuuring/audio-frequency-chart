@@ -1,6 +1,10 @@
 .App {
-  text-align: center;
-  margin: 2em;
+  background: black;
+  color: white;
+}
+
+text.recharts-text.recharts-cartesian-axis-tick-value {
+  color: white;
 }
 
 .App-logo {

@@ -52,7 +52,7 @@ const MicrophoneVisualizer = () => {
                 { time: Date.now(), frequency: frequency },
               ]);
 
-              ctx.fillStyle = 'grey';
+              ctx.fillStyle = 'white';
               ctx.fillRect(0, 0, canvas.width, canvas.height);
 
               const barHeight = rms * canvas.height;
@@ -130,7 +130,7 @@ const MicrophoneVisualizer = () => {
         <YAxis label={{ value: 'Volume', angle: -90, position: 'insideLeft' }} />
         <Tooltip />
         <CartesianGrid stroke="#f5f5f5" />
-        <Line type="monotone" dataKey="volume" stroke="#ff7300" yAxisId={0} />
+        <Line type="monotone" dataKey="volume" stroke="#001DFF" yAxisId={0} />
       </LineChart>
       <h2>Detected Frequency (Hz)</h2>
       <LineChart

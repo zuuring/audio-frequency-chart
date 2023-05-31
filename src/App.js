@@ -1,5 +1,6 @@
 import AudioInput from "./AudioInput";
 import AudioVisualizer from './AudioVisualizer';
+import './App.css';
 
 function App() {
   return (

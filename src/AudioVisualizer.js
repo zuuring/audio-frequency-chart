@@ -49,7 +49,7 @@ const MicrophoneVisualizer = () => {
 
       source.connect(gainNode);
 
-      const bufferSize = 2048;
+      const bufferSize = 4096;
 
       analyzer = Meyda.createMeydaAnalyzer({
         audioContext: audioContext,
@@ -148,7 +148,7 @@ const MicrophoneVisualizer = () => {
       return (maxIndexAndAmplitude.index + p) * (sampleRate / (2 * spectrum.length));
     }
 
-    return maxIndexAndAmplitude.index * (sampleRate / (2 * spectrum.length));
+    return maxIndexAndAmplitude.index * (sampleRate / (2 * spectrum.length)).toFixed(2);
   };
 
 
@@ -171,7 +171,7 @@ const MicrophoneVisualizer = () => {
         </button>
       </div>
       <h2>Audio Source</h2>
-      <input type="file" accept=".mp3" onChange={handleFileChange} ref={fileInputRef} />
+      <input type="file" accept=".mp3, .m4a" onChange={handleFileChange} ref={fileInputRef} />
       <audio controls ref={audioElementRef} style={{ marginTop: '1rem' }} />
       <h2>Recorded Volume</h2>
       <LineChart

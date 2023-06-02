@@ -59,7 +59,8 @@ const MicrophoneVisualizer = () => {
         callback: (features) => {
           const rms = features.rms;
           const frequency = getFrequencyFromSpectrum(features.amplitudeSpectrum, audioContext.sampleRate);
-
+          // console.log("Sample rate: ", audioContext.sampleRate);
+          // console.log("spectrum size: ", features.amplitudeSpectrum);
           setVolumeData((prevData) => [
             ...prevData,
             { time: Date.now(), volume: rms },
@@ -129,12 +130,27 @@ const MicrophoneVisualizer = () => {
   };
 
   const getFrequencyFromSpectrum = (spectrum, sampleRate) => {
-    const positiveSpectrum = spectrum.slice(0, spectrum.length / 2);
-    const maxAmplitude = Math.max(...positiveSpectrum);
-    const index = positiveSpectrum.findIndex((value) => value === maxAmplitude);
-    const frequency = index * (sampleRate / (2 * spectrum.length));
-    return frequency.toFixed(2);
-};
+    const halfLength = spectrum.length / 2;
+    const positiveSpectrum = spectrum.slice(0, halfLength);
+    const maxIndexAndAmplitude = positiveSpectrum.reduce(
+      (max, amplitude, i) => amplitude > max.amplitude ? {index: i, amplitude} : max,
+      {index: -1, amplitude: -Infinity}
+    );
+
+    let alpha, beta, gamma;
+    if (maxIndexAndAmplitude.index > 0 && maxIndexAndAmplitude.index < halfLength - 1) {
+      alpha = positiveSpectrum[maxIndexAndAmplitude.index - 1];
+      beta = maxIndexAndAmplitude.amplitude;
+      gamma = positiveSpectrum[maxIndexAndAmplitude.index + 1];
+
+      const p = 0.5 * (alpha - gamma) / (alpha - 2*beta + gamma);
+
+      return (maxIndexAndAmplitude.index + p) * (sampleRate / (2 * spectrum.length));
+    }
+
+    return maxIndexAndAmplitude.index * (sampleRate / (2 * spectrum.length));
+  };
+
 
   return (
     <div style={{ padding: '2em' }}>

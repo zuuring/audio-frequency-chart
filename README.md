@@ -1,10 +1,7 @@
 # Audio freqz!
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is a fun project which checks the frequency of the sound coming in as an input, which can be converted to tuning key. The goal is for it to record a session and give a summary of set frequencies across it. 
 
-## Available Scripts
-
-In the project directory, you can run:
 
 ### `npm start`
 
